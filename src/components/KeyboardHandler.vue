@@ -4,6 +4,7 @@
 
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
+import { useShortcutStore } from "./stores/shortcut";
 
 const staticKeys = [
   "Meta",
@@ -30,6 +31,18 @@ export default class KeyboardHandler extends Vue {
 
   handler: number | null = null;
 
+  numKeysRecorded = 0;
+  recordedShortcut: string | null = null;
+  recordingShortcutTimeout: number | null = null;
+
+  get recordingShortcut() {
+    return useShortcutStore().recordingShortcut;
+  }
+
+  get hotkeyToAction() {
+    return useShortcutStore().hotkeyToAction;
+  }
+
   created() {
     window.addEventListener("keydown", this.keydownHandler);
     window.addEventListener("keyup", this.keyupHandler);
@@ -40,7 +53,49 @@ export default class KeyboardHandler extends Vue {
     window.removeEventListener("keyup", this.keyupHandler);
   }
 
-  emitKeydownEvent() {
+  handleHotkeyEvent(event?: KeyboardEvent) {
+    const keys = this.getSortedKeys();
+    const keysStr = keys.join(" + ");
+
+    if (this.recordingShortcut) {
+      event?.preventDefault();
+      if (keys.length === 0 || this.numKeysRecorded > keys.length) {
+        this.endRecordShortcut();
+        return;
+      }
+
+      if (!this.recordingShortcutTimeout) {
+        this.recordingShortcutTimeout = setTimeout(() => this.endRecordShortcut(), 2000);
+      }
+
+      this.recordedShortcut = keysStr;
+      this.numKeysRecorded = keys.length;
+      return;
+    }
+
+    const hotkeyToAction = this.hotkeyToAction;
+    if (keysStr in hotkeyToAction) {
+      event?.preventDefault();
+      hotkeyToAction[keysStr]();
+    }
+  }
+
+  endRecordShortcut() {
+    if (!this.recordingShortcut) {
+      return;
+    }
+
+    if (this.recordedShortcut) {
+      useShortcutStore().updateShortcut(this.recordingShortcut, this.recordedShortcut);
+      this.recordedShortcut = null;
+    } else {
+      useShortcutStore().endRecording();
+    }
+
+    this.numKeysRecorded = 0;
+  }
+
+  getSortedKeys(): string[] {
     const finalKeys = Object.keys(this.keys ?? {});
     finalKeys.sort((a, b) => {
       const staticIndexA = staticKeys.indexOf(a);
@@ -61,11 +116,11 @@ export default class KeyboardHandler extends Vue {
       return a.localeCompare(b);
     });
 
-    this.$emit("keydown", finalKeys);
+    return finalKeys;
   }
 
-  getKey(e: KeyboardEvent): string {
-    return /^[a-zA-Z]{1}$/.test(e.key) ? e.key.toUpperCase() : e.key;
+  getKey(event: KeyboardEvent): string {
+    return /^[a-zA-Z]{1}$/.test(event.key) ? event.key.toUpperCase() : event.key;
   }
 
   handleTimeout(): void {
@@ -76,24 +131,22 @@ export default class KeyboardHandler extends Vue {
 
     this.handler = setTimeout(() => {
       this.keys = {};
-      this.emitKeydownEvent();
+      this.handleHotkeyEvent();
     }, 2000);
   }
 
-  keydownHandler(e: KeyboardEvent) {
-    e.preventDefault();
-    if (e.key in this.keys) {
+  keydownHandler(event: KeyboardEvent) {
+    if (event.key in this.keys) {
       return;
     }
-    this.keys[this.getKey(e)] = true;
-    this.emitKeydownEvent();
+    this.keys[this.getKey(event)] = true;
+    this.handleHotkeyEvent(event);
     this.handleTimeout();
   }
 
-  keyupHandler(e: KeyboardEvent) {
-    e.preventDefault();
-    delete this.keys[this.getKey(e)];
-    this.emitKeydownEvent();
+  keyupHandler(event: KeyboardEvent) {
+    delete this.keys[this.getKey(event)];
+    this.handleHotkeyEvent(event);
     this.handleTimeout();
   }
 }

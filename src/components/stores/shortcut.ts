@@ -10,11 +10,21 @@ interface Shortcut {
 export const useShortcutStore = defineStore({
   id: "shortcut",
   state: () => ({
+    recordingShortcut: null as string | null,
     shortcuts: [] as Shortcut[],
     shortcutByName: {} as Record<string, Shortcut>,
     hotkeyToAction: {} as Record<string, () => void>,
   }),
+  getters: {
+    isRecording: (state) => Boolean(state.recordingShortcut)
+  },
   actions: {
+    startRecording(name: string) {
+      this.recordingShortcut = name;
+    },
+    endRecording() {
+      this.recordingShortcut = null;
+    },
     updateShortcut(name: string, hotkey: string) {
       if (!(name in this.shortcutByName)) {
         return;
@@ -23,7 +33,8 @@ export const useShortcutStore = defineStore({
       this.hotkeyToAction[hotkey] = this.shortcutByName[name].action;
       this.shortcutByName[name].currentHotkey = hotkey;
       localStorage.setItem(`shortcut-${name}`, hotkey);
-      console.info(`Event fired for shortcut \"${name}\"`);
+      this.recordingShortcut = null;
+      console.info(`Hotkey updated for shortcut \"${name}\". New hotkey:`, hotkey);
     },
     registerShortcut(name: string, defaultHotkey: string, action: () => void) {
       if (name in this.shortcutByName) {
@@ -46,6 +57,7 @@ export const useShortcutStore = defineStore({
 
       this.hotkeyToAction[currentHotkey] = action;
       this.shortcuts.push(shortcut);
+      this.shortcuts.sort((a, b) => a.name.localeCompare(b.name))
       console.info(`Shortcut registered with name \"${name}\". Hotkey: `, currentHotkey);
     },
     unregisterShortcut(name: string) {
