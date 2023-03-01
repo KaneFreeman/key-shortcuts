@@ -1,7 +1,3 @@
-<template>
-  <div></div>
-</template>
-
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
 import { useShortcutStore } from "./stores/shortcut";
@@ -26,7 +22,7 @@ const staticKeys = [
 ];
 
 @Component({})
-export default class KeyboardHandler extends Vue {
+export default class KeyboardHandlerMixin extends Vue {
   keys: Record<string, boolean> = {};
 
   handler: number | null = null;
@@ -151,9 +147,3 @@ export default class KeyboardHandler extends Vue {
   }
 }
 </script>
-
-<style scoped>
-div {
-  display: none;
-}
-</style>

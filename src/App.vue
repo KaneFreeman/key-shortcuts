@@ -1,12 +1,17 @@
-<script setup lang="ts">
-import HelloWorld from './components/Settings.vue'
+<script lang="ts">
+import { Component, Mixins } from "vue-property-decorator";
+import KeyboardHandlerMixin from "./components/KeyboardHandlerMixin.vue";
+import Settings from "./components/Settings.vue";
+
+@Component({ components: { Settings } })
+export default class App extends Mixins(KeyboardHandlerMixin) {}
 </script>
 
 <template>
   <div id="app" class="app">
     <header>
       <div class="wrapper">
-        <HelloWorld />
+        <Settings />
       </div>
     </header>
   </div>

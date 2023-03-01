@@ -1,11 +1,10 @@
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
-import KeyboardHandler from "./KeyboardHandler.vue";
 import { useShortcutStore } from "./stores/shortcut";
 import Widget from "./Widget.vue";
 import Widget2 from "./Widget2.vue";
 
-@Component({ components: { KeyboardHandler, Widget, Widget2 } })
+@Component({ components: { Widget, Widget2 } })
 export default class Settings extends Vue {
   keys = "";
 
@@ -39,7 +38,6 @@ export default class Settings extends Vue {
         Record Shortcut
       </button>
     </div>
-    <KeyboardHandler />
     <Widget />
     <Widget2 />
   </div>
