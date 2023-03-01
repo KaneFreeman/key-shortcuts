@@ -3,12 +3,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
-
-interface KeyEvents {
-  keys: string[];
-  eventName: string;
-}
+import { Component, Vue } from "vue-property-decorator";
 
 const staticKeys = [
   "Meta",
@@ -34,8 +29,6 @@ export default class KeyboardHandler extends Vue {
   keys: Record<string, boolean> = {};
 
   handler: number | null = null;
-
-  @Prop({ type: Object, default: {} }) keyEvents!: KeyEvents[];
 
   get optimizeEvents() {
     return Math.random();
