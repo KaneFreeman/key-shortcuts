@@ -9,6 +9,8 @@
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "pinia": "^2.0.16",
+    "pinia-plugin-persistedstate": "^3.1.0",
     "vue": "^2.7.7",
     "vue-property-decorator": "^8.4.2"
   },

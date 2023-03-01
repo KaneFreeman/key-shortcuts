@@ -1,20 +1,27 @@
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
 import KeyboardHandler from "./KeyboardHandler.vue";
+import { useShortcutStore } from "./stores/shortcut";
+import Widget from "./Widget.vue";
+import Widget2 from "./Widget2.vue";
 
-@Component({ components: { KeyboardHandler } })
+@Component({ components: { KeyboardHandler, Widget, Widget2 } })
 export default class HelloWorld extends Vue {
   keys = "";
 
   keyEvents: Record<string, () => void> = {};
 
-  recordingShortcut = false;
+  recordingShortcut: string | null = null;
   numKeysRecorded = 0;
   recordedShortcut: string | null = null;
   recordingShortcutTimeout: number | null = null;
 
-  mounted() {
-    this.buildShortcuts();
+  get shortcuts() {
+    return useShortcutStore().shortcuts;
+  }
+
+  get hotkeyToAction() {
+    return useShortcutStore().hotkeyToAction;
   }
 
   updateKeys(keys: string[]) {
@@ -36,29 +43,28 @@ export default class HelloWorld extends Vue {
       return;
     }
 
-    if (keysStr in this.keyEvents) {
-      this.keyEvents[keysStr]();
+    const hotkeyToAction = this.hotkeyToAction;
+    if (keysStr in hotkeyToAction) {
+      hotkeyToAction[keysStr]();
     }
   }
 
-  startRecordShortcut() {
-    this.recordingShortcut = true;
+  startRecordShortcut(shortcut: string) {
+    this.recordingShortcut = shortcut;
   }
 
   endRecordShortcut() {
-    this.recordingShortcut = false;
-    this.numKeysRecorded = 0;
-    if (this.recordedShortcut && this.recordedShortcut !== "") {
-      localStorage.setItem("shortcut", this.recordedShortcut);
+    if (!this.recordingShortcut) {
+      return;
     }
-    this.buildShortcuts();
-  }
 
-  buildShortcuts() {
-    this.keyEvents = {
-      [localStorage.getItem("shortcut") ?? "Shift + B"]: this.shortcutEvent,
-    };
-    console.log("building shortcuts", this.keyEvents);
+    if (this.recordedShortcut) {
+      useShortcutStore().updateShortcut(this.recordingShortcut, this.recordedShortcut);
+      this.recordedShortcut = null;
+    }
+
+    this.recordingShortcut = null;
+    this.numKeysRecorded = 0;
   }
 
   shortcutEvent() {
@@ -68,38 +74,17 @@ export default class HelloWorld extends Vue {
 </script>
 
 <template>
-  <div class="greetings">
-    <h3 v-if="recordingShortcut">Recording!</h3>
-    <h3 v-if="recordedShortcut?.length">Recorded: {{ recordedShortcut }}</h3>
-    <h3>
-      {{ keys }}
-    </h3>
+  <div style="display: flex; flex-direction: column">
+    <h3 style="margin-bottom: 20px">Current: {{ keys }}</h3>
+    <div v-for="shortcut in shortcuts" style="display: flex; gap: 40px; margin-bottom: 40px;">
+      <span>Shortcut: {{ shortcut.name }}</span>
+      <span>{{ shortcut.currentHotkey }}</span>
+      <button @click="startRecordShortcut(shortcut.name)" :disabled="Boolean(recordingShortcut)">
+        Record Shortcut
+      </button>
+    </div>
     <KeyboardHandler @keydown="updateKeys" />
-    <button @click="startRecordShortcut" :disabled="recordingShortcut">Record Shortcut</button>
+    <Widget />
+    <Widget2 />
   </div>
 </template>
-
-<style scoped>
-h1 {
-  font-weight: 500;
-  font-size: 2.6rem;
-  top: -10px;
-}
-
-h3 {
-  font-size: 1.2rem;
-}
-
-.greetings h1,
-.greetings h3 {
-  text-align: center;
-}
-
-@media (min-width: 1024px) {
-  .greetings h1,
-  .greetings h3 {
-    display: block;
-    text-align: left;
-  }
-}
-</style>

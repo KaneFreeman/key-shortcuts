@@ -30,10 +30,6 @@ export default class KeyboardHandler extends Vue {
 
   handler: number | null = null;
 
-  get optimizeEvents() {
-    return Math.random();
-  }
-
   created() {
     window.addEventListener("keydown", this.keydownHandler);
     window.addEventListener("keyup", this.keyupHandler);
